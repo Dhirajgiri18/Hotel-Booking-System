@@ -1,0 +1,47 @@
+name: Java Spring Boot + C++ Integration CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Install build tools
+      run: sudo apt-get update && sudo apt-get install -y g++ make
+
+    - name: Compile C++ pricing engine
+      working-directory: src/main/java/com/hotel/booking/service
+      run: |
+        g++ pricing_engine.cpp -o pricing_engine.exe
+
+    - name: Build with Maven
+      run: mvn clean package --batch-mode
+
+    - name: Run tests
+      run: mvn test
+
+    - name: Archive C++ binary (optional)
+      uses: actions/upload-artifact@v4
+      with:
+        name: pricing_engine
+        path: src/main/java/com/hotel/booking/service/pricing_engine.exe
+
+    - name: Archive Spring Boot JAR (optional)
+      uses: actions/upload-artifact@v4
+      with:
+        name: hotel-booking-system
+        path: target/*.jar
